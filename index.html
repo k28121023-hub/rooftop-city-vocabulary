@@ -664,7 +664,7 @@
             }
             const ground = [...gameState.buildings, ...gameState.bars].find(obj => x >= obj.x && x <= obj.x + obj.width);
             const baseLine = ground ? ground.y : canvas.height - 100;
-            const safeY = Math.min(Math.max(200, baseLine - 120 - Math.random() * 80), 500);
+            const safeY = Math.min(Math.max(200, baseLine - 120 - Math.random() * 80), Math.max(500, canvas.height - 200));
             gameState.floatingWords.push(new FloatingWord(x, safeY, targetWord));
         }
 
