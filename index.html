@@ -332,6 +332,10 @@
         let jumpRequestedUntil = 0;
         let lastGroundTime = -Infinity;
         let touchJumpHeld = false;
+        let healthItems = [];
+        let lastHealthSpawnTime = Date.now();
+        const healthSpawnInterval = 30000;
+        const healingLimit = 4;
 
         const evilEye = {
             state: 'closed', timer: 0, eyeX: 100, eyeY: 80, beamX: 0, beamWidth: 120,
@@ -543,6 +547,66 @@
             }
         }
 
+        class HealthCan {
+            constructor(x, y) {
+                this.worldX = x; this.y = y;
+                this.width = 36; this.height = 44;
+                this.active = true; this.createdAt = Date.now();
+            }
+            draw(scrollX) {
+                const x = this.worldX - scrollX;
+                ctx.save();
+                ctx.shadowColor = '#22c55e'; ctx.shadowBlur = 12;
+                ctx.fillStyle = '#15803d';
+                ctx.beginPath(); ctx.roundRect(x, this.y, this.width, this.height, 7); ctx.fill();
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#dcfce7'; ctx.fillRect(x + 5, this.y + 2, 26, 5);
+                ctx.fillStyle = 'white'; ctx.fillRect(x + 15, this.y + 13, 6, 22);
+                ctx.fillRect(x + 7, this.y + 21, 22, 6);
+                ctx.restore();
+            }
+        }
+
+        function spawnHealthCan() {
+            const surfaces = [...gameState.buildings, ...gameState.bars].filter(surface =>
+                surface.x + surface.width > gameState.scrollX + 20 &&
+                surface.x < gameState.scrollX + canvas.width - 20 &&
+                surface.y > 70 && surface.y < canvas.height);
+            surfaces.sort((a, b) => {
+                const distance = surface => Math.abs(surface.y - (player.y + player.height)) +
+                    Math.max(surface.x - player.worldX, player.worldX - surface.x - surface.width, 0);
+                return distance(a) - distance(b);
+            });
+            if (!surfaces.length) return;
+            const surface = surfaces[0];
+            const left = Math.max(surface.x + 4, gameState.scrollX + 12);
+            const right = Math.min(surface.x + surface.width - 40, gameState.scrollX + canvas.width - 48);
+            if (right < left) return;
+            const x = Math.max(left, Math.min(player.worldX + 90, right));
+            healthItems = [new HealthCan(x, surface.y - 44)];
+        }
+
+        function updateHealthCans() {
+            const now = Date.now();
+            if (now - lastHealthSpawnTime >= healthSpawnInterval) {
+                spawnHealthCan();
+                lastHealthSpawnTime = now;
+            }
+            healthItems.forEach(item => {
+                if (item.active && player.worldX + player.width > item.worldX &&
+                    player.worldX < item.worldX + item.width && player.y + player.height > item.y &&
+                    player.y < item.y + item.height) {
+                    item.active = false;
+                    if (gameState.lives < healingLimit) {
+                        gameState.lives = Math.min(healingLimit, gameState.lives + 1);
+                        updateLives();
+                        flashScreen('rgba(34, 197, 94, 0.3)');
+                    }
+                }
+            });
+            healthItems = healthItems.filter(item => item.active && now - item.createdAt < healthSpawnInterval);
+        }
+
         class Building {
             constructor(x) {
                 this.width = 300 + Math.random() * 300; this.height = 150 + Math.random() * (canvas.height * 0.6);
@@ -586,7 +650,7 @@
                     gameState.buildings.forEach(obj => obj.y += delta);
                     gameState.bars.forEach(obj => obj.y += delta);
                 }
-                [...gameState.mummies, ...gameState.shieldItems, ...gameState.floatingWords, ...gameState.projectiles].forEach(obj => obj.y += delta);
+                [...gameState.mummies, ...gameState.shieldItems, ...gameState.floatingWords, ...gameState.projectiles, ...healthItems].forEach(obj => obj.y += delta);
             }
         }
         window.addEventListener('resize', resize);
@@ -611,6 +675,8 @@
         }
 
         function initBuildings() {
+            healthItems = [];
+            lastHealthSpawnTime = Date.now();
             gameState.level = 1; gameState.scrollX = 0;
             gameState.buildings = []; gameState.bars = []; gameState.mummies = []; gameState.floatingWords = []; gameState.shieldItems = [];
             gameState.answeredWords.clear();
@@ -634,6 +700,7 @@
         }
 
         function initBossLevel() {
+            healthItems = [];
             gameState.level = 2; gameState.level2Score = 0;
             gameState.answeredWords.clear();
             gameState.buildings = []; gameState.mummies = []; gameState.shieldItems = []; gameState.floatingWords = [];
@@ -899,6 +966,7 @@
             gameState.floatingWords = gameState.floatingWords.filter(fw => fw.active);
 
             if (player.y > canvas.height) { takeDamage(); player.y = 0; player.worldX = Math.max(100, player.worldX - 150); }
+            if (!gameState.isGameOver && !evilEye.isBurning) updateHealthCans();
             
             if (gameState.level === 1 && gameState.buildings[gameState.buildings.length-1].x - gameState.scrollX < canvas.width + 500) {
                 const prevB = gameState.buildings[gameState.buildings.length-1];
@@ -931,6 +999,7 @@
             gameState.bars.forEach(bar => bar.draw(gameState.scrollX));
             gameState.mummies.forEach(m => m.draw(gameState.scrollX));
             gameState.shieldItems.forEach(si => si.draw(gameState.scrollX));
+            healthItems.forEach(item => item.draw(gameState.scrollX));
             gameState.projectiles.forEach(p => p.draw(gameState.scrollX));
             gameState.floatingWords.forEach(fw => fw.draw(gameState.scrollX));
             
