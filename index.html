@@ -176,6 +176,18 @@
             color: white; font: bold 20px inherit; font-size: 20px; font-weight: bold;
             touch-action: manipulation; cursor: pointer; }
         #btn-restart:active { background: #5b21b6; }
+        #controls-left { display: grid; grid-template-columns: repeat(3, 52px);
+            grid-template-rows: repeat(3, 52px); gap: 4px; }
+        #controls-left .touch-btn { width: 52px; height: 52px; border-radius: 14px; }
+        #controls-left #btn-up { grid-column: 2; grid-row: 1; font-size: 14px; }
+        #controls-left #btn-left { grid-column: 1; grid-row: 2; }
+        #controls-left #btn-right { grid-column: 3; grid-row: 2; }
+        #controls-left #btn-down { grid-column: 2; grid-row: 3; font-size: 14px; }
+        #controls-right { display: flex; }
+        #btn-fire { grid-column: auto !important; grid-row: auto; }
+        @media (pointer: fine) and (min-width: 1024px) {
+            #controls-left, #controls-right { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -198,13 +210,13 @@
 
     <!-- 虛擬按鍵 -->
     <div id="controls-left">
+        <button type="button" class="touch-btn" id="btn-up" aria-label="跳躍">↑ 跳躍</button>
         <button type="button" class="touch-btn" id="btn-left">←</button>
         <button type="button" class="touch-btn" id="btn-right">→</button>
+        <button type="button" class="touch-btn" id="btn-down" aria-label="蹲下">↓ 蹲下</button>
     </div>
     <div id="controls-right">
         <button type="button" class="touch-btn fire-btn" id="btn-fire" aria-label="射擊">射擊</button>
-        <button type="button" class="touch-btn" id="btn-up" aria-label="跳躍">跳躍</button>
-        <button type="button" class="touch-btn" id="btn-down" aria-label="蹲下">蹲下</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
