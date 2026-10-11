@@ -186,6 +186,9 @@
         #controls-right { display: flex; }
         #controls-left { left: auto; right: max(12px, env(safe-area-inset-right)); }
         #controls-right { right: auto; left: max(12px, env(safe-area-inset-left)); }
+        #touch-jump-note { position: absolute; bottom: calc(100% + 6px); right: 0;
+            width: 164px; color: #ddd6fe; font-size: 11px; text-align: center;
+            pointer-events: none; text-shadow: 0 1px 3px #000; }
         #btn-fire { grid-column: auto !important; grid-row: auto; }
         @media (pointer: fine) and (min-width: 1024px) {
             #controls-left, #controls-right { display: none; }
@@ -212,7 +215,8 @@
 
     <!-- 虛擬按鍵 -->
     <div id="controls-left">
-        <button type="button" class="touch-btn" id="btn-up" aria-label="跳躍">↑ 跳躍</button>
+        <span id="touch-jump-note">觸控跳躍加強 · 按住連跳</span>
+        <button type="button" class="touch-btn" id="btn-up" aria-label="跳躍">↑ 跳躍+</button>
         <button type="button" class="touch-btn" id="btn-left">←</button>
         <button type="button" class="touch-btn" id="btn-right">→</button>
         <button type="button" class="touch-btn" id="btn-down" aria-label="蹲下">↓ 蹲下</button>
@@ -344,6 +348,8 @@
 
         const keys = {};
         let jumpRequestedUntil = 0;
+        let jumpRequestedByTouch = false;
+        const touchJumpMultiplier = 1.2;
         let lastGroundTime = -Infinity;
         let touchJumpHeld = false;
         const touchJumpPointers = new Set();
@@ -856,20 +862,24 @@
             }
         }
 
-        function performJump(bufferMs = 150, graceMs = 100) {
+        function performJump(bufferMs = 150, graceMs = 100, fromTouch = false) {
             if (gameState.isGameOver || gameState.isVictory) return;
             jumpRequestedUntil = Date.now() + bufferMs;
+            jumpRequestedByTouch = fromTouch;
             if (player.onGround || Date.now() - lastGroundTime < graceMs) {
-                player.vy = player.jumpPower;
+                player.vy = player.jumpPower * (fromTouch ? touchJumpMultiplier : 1);
                 player.onGround = false;
                 lastGroundTime = -Infinity;
                 jumpRequestedUntil = 0;
+                jumpRequestedByTouch = false;
             }
         }
 
         function update() {
             if (gameState.isGameOver || gameState.isVictory) return;
-            if (player.onGround && (touchJumpHeld || Date.now() < jumpRequestedUntil)) performJump();
+            if (player.onGround && (touchJumpHeld || Date.now() < jumpRequestedUntil)) {
+                performJump(350, 180, touchJumpHeld || jumpRequestedByTouch);
+            }
             if (gameState.invincibleTimer > 0) gameState.invincibleTimer--;
 
             if (evilEye.isBurning) {
@@ -1139,6 +1149,7 @@
             Object.keys(keys).forEach(key => keys[key] = false);
             gameState.projectiles = [];
             jumpRequestedUntil = 0;
+            jumpRequestedByTouch = false;
             lastGroundTime = -Infinity;
             touchJumpHeld = false;
             touchJumpPointers.clear();
@@ -1189,7 +1200,7 @@
                 else touchJumpPointers.delete(pointerId);
                 touchJumpHeld = touchJumpPointers.size > 0;
                 keys['ArrowUp'] = touchJumpHeld;
-                if (pressed && !wasPressed) performJump(250, 140);
+                if (pressed && !wasPressed) performJump(350, 180, true);
             };
             btn.addEventListener('pointerdown', e => {
                 e.preventDefault();
