@@ -522,8 +522,9 @@
             }
             const hud = document.getElementById('target-ui').getBoundingClientRect();
             const controls = document.getElementById('controls-right').getBoundingClientRect();
-            const top = compact ? hud.bottom + 8 : 0;
-            const bottom = compact ? height - controls.top + 8 : 0;
+            const reserveControls = compact && height >= 500;
+            const top = reserveControls ? hud.bottom + 8 : 0;
+            const bottom = reserveControls ? height - controls.top + 8 : 0;
             const availableHeight = Math.max(1, height - top - bottom);
             const scale = Math.min(width / canvas.width, availableHeight / canvas.height);
             canvas.style.width = (canvas.width * scale) + 'px';
