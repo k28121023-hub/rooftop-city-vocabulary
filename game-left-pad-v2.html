@@ -349,6 +349,8 @@
         let jumpRequestedUntil = 0;
         let jumpRequestedByTouch = false;
         const touchJumpMultiplier = 1.2;
+        const lightningAttackInterval = 30000;
+        let lastLightningAttackTime = Date.now();
         const touchRightMultiplier = 1.4;
         const touchRightAirMultiplier = 1.7;
         let touchRightHeld = false;
@@ -933,10 +935,11 @@
                 evilEye.state = 'closed';
             } else {
                 evilEye.timer++;
-                if (evilEye.state === 'closed' && evilEye.timer > evilEye.duration.closed) {
+                if (evilEye.state === 'closed' && Date.now() - lastLightningAttackTime >= lightningAttackInterval) {
                     evilEye.state = 'warning'; evilEye.timer = 0;
+                    lastLightningAttackTime = Date.now();
                     evilEye.hasHitPlayer = false; 
-                    evilEye.beamX = (gameState.level === 2) ? player.worldX + 25 : Math.random() * (canvas.width - 200) + 100;
+                    evilEye.beamX = evilEye.beamWidth / 2 + Math.random() * Math.max(0, canvas.width - evilEye.beamWidth);
                 } else if (evilEye.state === 'warning' && evilEye.timer > evilEye.duration.warning) {
                     evilEye.state = 'open'; evilEye.timer = 0;
                 } else if (evilEye.state === 'open' && evilEye.timer > evilEye.duration.open) {
@@ -1180,6 +1183,11 @@
             gameState.invincibleTimer = 0;
             gameState.lastWordSpawnX = 100;
             gameState.wordsSpawnedCount = 0;
+            lastLightningAttackTime = Date.now();
+            evilEye.state = 'closed';
+            evilEye.timer = 0;
+            evilEye.stunnedUntil = 0;
+            evilEye.hasHitPlayer = false;
             evilEye.isBurning = false;
             evilEye.particles = [];
             player.worldX = 100;
