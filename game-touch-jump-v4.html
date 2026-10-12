@@ -349,7 +349,8 @@
         let jumpRequestedUntil = 0;
         let jumpRequestedByTouch = false;
         const touchJumpMultiplier = 1.2;
-        const touchRightMultiplier = 1.2;
+        const touchRightMultiplier = 1.4;
+        const touchRightAirMultiplier = 1.7;
         let touchRightHeld = false;
         let lastGroundTime = -Infinity;
         let touchJumpHeld = false;
@@ -946,7 +947,7 @@
             }
 
             if (keys['ArrowLeft']) { player.vx = -player.speed; gameState.lastDir = -1; }
-            else if (keys['ArrowRight']) { player.vx = player.speed * (touchRightHeld ? touchRightMultiplier : 1); gameState.lastDir = 1; }
+            else if (keys['ArrowRight']) { player.vx = player.speed * (touchRightHeld ? (player.onGround ? touchRightMultiplier : touchRightAirMultiplier) : 1); gameState.lastDir = 1; }
             else player.vx = 0;
 
             player.worldX += player.vx; player.vy += gameState.gravity; player.y += player.vy; player.onGround = false;
