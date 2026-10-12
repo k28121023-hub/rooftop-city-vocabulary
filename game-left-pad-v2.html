@@ -363,7 +363,7 @@
         const simulationStep = 1000 / 60;
         let healthItems = [];
         let lastHealthSpawnTime = Date.now();
-        const healthSpawnInterval = 30000;
+        const healthSpawnInterval = 35000;
         const healingLimit = 4;
 
         const evilEye = {
@@ -740,6 +740,9 @@
             updateLives();
 
             layoutBossPlatforms();
+            player.y = gameState.bars[0].y - player.height;
+            player.vy = 0;
+            player.onGround = true;
 
             levelDisplayEl.textContent = "STAGE 2: EYE OF DOOM";
             announcementEl.style.opacity = "1";
@@ -748,6 +751,22 @@
         }
 
         function layoutBossPlatforms() {
+            const viewportWidth = document.documentElement.clientWidth;
+            const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            if (viewportWidth <= 900 && viewportHeight > viewportWidth) {
+                // Keep the arena above the touch controls and leave open lanes between ledges.
+                const scale = viewportWidth / canvas.width;
+                const floorY = canvas.height - 170 / scale;
+                const topY = 170 / scale;
+                const rows = Math.max(2, Math.ceil((floorY - topY) / 140));
+                const gap = (floorY - topY) / rows;
+                gameState.bars = [new Bar(0, floorY, canvas.width)];
+                for (let row = 1; row <= rows; row++) {
+                    const x = canvas.width * (row % 2 ? 0.08 : 0.58);
+                    gameState.bars.push(new Bar(x, floorY - row * gap, canvas.width * 0.34));
+                }
+                return;
+            }
             gameState.bars = [
                 new Bar(0, canvas.height - 40, canvas.width), 
                 new Bar(canvas.width * 0.1, canvas.height * 0.83, 250), 
