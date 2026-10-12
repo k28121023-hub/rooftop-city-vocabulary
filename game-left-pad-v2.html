@@ -215,8 +215,7 @@
 
     <!-- 虛擬按鍵 -->
     <div id="controls-left">
-        <span id="touch-jump-note">觸控跳躍加強 · 按住連跳</span>
-        <button type="button" class="touch-btn" id="btn-up" aria-label="跳躍">↑ 跳躍+</button>
+        <button type="button" class="touch-btn" id="btn-up" aria-label="跳躍">↑</button>
         <button type="button" class="touch-btn" id="btn-left">←</button>
         <button type="button" class="touch-btn" id="btn-right">→</button>
         <button type="button" class="touch-btn" id="btn-down" aria-label="蹲下">↓ 蹲下</button>
@@ -350,6 +349,8 @@
         let jumpRequestedUntil = 0;
         let jumpRequestedByTouch = false;
         const touchJumpMultiplier = 1.2;
+        const touchRightMultiplier = 1.2;
+        let touchRightHeld = false;
         let lastGroundTime = -Infinity;
         let touchJumpHeld = false;
         const touchJumpPointers = new Set();
@@ -945,7 +946,7 @@
             }
 
             if (keys['ArrowLeft']) { player.vx = -player.speed; gameState.lastDir = -1; }
-            else if (keys['ArrowRight']) { player.vx = player.speed; gameState.lastDir = 1; }
+            else if (keys['ArrowRight']) { player.vx = player.speed * (touchRightHeld ? touchRightMultiplier : 1); gameState.lastDir = 1; }
             else player.vx = 0;
 
             player.worldX += player.vx; player.vy += gameState.gravity; player.y += player.vy; player.onGround = false;
@@ -1151,6 +1152,7 @@
             jumpRequestedUntil = 0;
             jumpRequestedByTouch = false;
             lastGroundTime = -Infinity;
+            touchRightHeld = false;
             touchJumpHeld = false;
             touchJumpPointers.clear();
             touchControlPointers.forEach(pointers => pointers.clear());
@@ -1186,7 +1188,7 @@
             if (e.code === 'ArrowUp') performJump();
         });
         window.addEventListener('keyup', e => keys[e.code] = false);
-        window.addEventListener('blur', () => { Object.keys(keys).forEach(key => keys[key] = false); touchJumpHeld = false; touchJumpPointers.clear(); lastFrameTime = null; simulationAccumulator = 0; });
+        window.addEventListener('blur', () => { Object.keys(keys).forEach(key => keys[key] = false); touchRightHeld = false; touchJumpHeld = false; touchJumpPointers.clear(); lastFrameTime = null; simulationAccumulator = 0; });
 
         // 觸控按鈕綁定
         function bindTouchBtn(id, keyName, onDownAction) {
@@ -1211,6 +1213,7 @@
                 }
                 keys[keyName] = true;
                 pointers.add(e.pointerId);
+                if (id === 'btn-right') touchRightHeld = true;
                 if (id === 'btn-up') setJumpPointer(e.pointerId, true);
                 else if (onDownAction) onDownAction();
             });
@@ -1229,6 +1232,7 @@
                     pointers.clear();
                 }
                 keys[keyName] = id === 'btn-up' ? touchJumpHeld : pointers.size > 0;
+                if (id === 'btn-right') touchRightHeld = pointers.size > 0;
             };
             btn.addEventListener('pointerup', release);
             btn.addEventListener('pointercancel', release);
