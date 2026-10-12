@@ -554,6 +554,15 @@
             constructor(x, y, width) { this.x = x; this.y = y; this.width = width; }
             draw(scrollX) {
                 const drawX = this.x - scrollX;
+                if (this.isArenaGround) {
+                    ctx.fillStyle = '#263648';
+                    ctx.fillRect(drawX, this.y, this.width, canvas.height - this.y);
+                    ctx.fillStyle = '#475569';
+                    ctx.fillRect(drawX, this.y, this.width, 20);
+                    ctx.fillStyle = '#dbeafe';
+                    ctx.fillRect(drawX, this.y, this.width, 5);
+                    return;
+                }
                 ctx.fillStyle = '#64748b'; ctx.fillRect(drawX, this.y, this.width, 10);
                 ctx.fillStyle = '#cbd5e1'; ctx.fillRect(drawX, this.y, this.width, 3);
             }
@@ -753,17 +762,17 @@
         function layoutBossPlatforms() {
             const viewportWidth = document.documentElement.clientWidth;
             const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-            if (viewportWidth <= 900 && viewportHeight > viewportWidth) {
-                // Keep the arena above the touch controls and leave open lanes between ledges.
+            if (viewportWidth <= 900) {
                 const scale = viewportWidth / canvas.width;
-                const floorY = canvas.height - 170 / scale;
-                const topY = 170 / scale;
-                const rows = Math.max(2, Math.ceil((floorY - topY) / 140));
-                const gap = (floorY - topY) / rows;
-                gameState.bars = [new Bar(0, floorY, canvas.width)];
+                const controlsSpace = viewportHeight > viewportWidth ? 170 : 88;
+                const floorY = canvas.height - controlsSpace / scale;
+                const floor = new Bar(0, floorY, canvas.width);
+                floor.isArenaGround = true;
+                gameState.bars = [floor];
+                const rows = Math.min(3, Math.max(1, Math.floor((floorY - 150) / 130)));
                 for (let row = 1; row <= rows; row++) {
-                    const x = canvas.width * (row % 2 ? 0.08 : 0.58);
-                    gameState.bars.push(new Bar(x, floorY - row * gap, canvas.width * 0.34));
+                    const x = canvas.width * (row % 2 ? 0.10 : 0.64);
+                    gameState.bars.push(new Bar(x, floorY - row * 130, canvas.width * 0.26));
                 }
                 return;
             }
